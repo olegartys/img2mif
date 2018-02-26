@@ -10,16 +10,6 @@ from pix_utils import *
 from mif_cmap import FileMifColorMap, WebPaletteMifColorMap
 import mif_convert
 
-CMAP_PATH = "/home/olegartys/quartus_prj/4grade/lab8/SPDS_Lab_8_DE1_SoC_Default/VGA_DATA/index_logo.mif"
-
-# Img -> mif constants
-SOURCE_IMG_PATH = "/home/olegartys/quartus_prj/4grade/lab8/snowmass.bmp"
-# MIF_OUT_PATH = "/home/olegartys/quartus_prj/4grade/lab8/orig.mif"
-MIF_OUT_PATH = "/home/olegartys/quartus_prj/4grade/lab8/snowmass.mif"
-
-# Mif -> img constants
-SOURCE_MIF_PATH = "/home/olegartys/quartus_prj/4grade/lab8/snowmass.mif"
-IMG_OUT_PATH = "/home/olegartys/quartus_prj/4grade/lab8/snowmass_reversed.bmp"
 
 def merge_channels(img):
 	rows, cols, _ = img.shape
