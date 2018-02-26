@@ -43,6 +43,8 @@ def parse_args(argv):
 	parser.add_argument('-r', '--reverse', action='store_true',
 		help='Perform a reverse operation: convert MIF image to the format \
 			specified in arguments')
+	parser.add_argument('--colormap', default='img_index.mif',
+		help='Name of the output MIF colormap file')
 
 	return parser.parse_args()
 
@@ -51,6 +53,7 @@ def main(argv):
 
 	img_path = args.image
 	mif_img_path = args.mif_image
+	colormap_path = args.colormap
 	is_reverse = args.reverse
 
 	if not is_reverse:
@@ -67,7 +70,7 @@ def main(argv):
 		# Build color map
 
 		cmap = WebPaletteMifColorMap()
-		# cmap.dump_to_mif("webpalette_cmap.mif")
+		cmap.dump_to_mif(colormap_path)
 
 		# And convert
 
