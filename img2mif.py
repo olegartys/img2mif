@@ -1,8 +1,10 @@
 import cv2
 from matplotlib import pyplot as plt
+import numpy as np
 
 import re
 import argparse
+import tempfile
 
 from pix_utils import *
 from mif_cmap import FileMifColorMap, WebPaletteMifColorMap
@@ -35,83 +37,102 @@ def merge_channels(img):
 def parse_args(argv):
 	parser = argparse.ArgumentParser(description='Image to MIF converted. By default webpalette colormap is used.')
 
-	parser.add_argument('input_image', help='Path to the image to be converted')
-	parser.add_argument('output_image', help='Path to the output MIF image')
+	parser.add_argument('image', help='Path to the image to be converted')
+	parser.add_argument('mif_image', help='Path to the output MIF image')
+
+	parser.add_argument('-r', '--reverse', action='store_true',
+		help='Perform a reverse operation: convert MIF image to the format \
+			specified in arguments')
 
 	return parser.parse_args()
 
 def main(argv):
 	args = parse_args(argv)
 
-	source_img_path = args.input_image
-	mif_img_path = args.output_image
+	img_path = args.image
+	mif_img_path = args.mif_image
+	is_reverse = args.reverse
 
-	# Image is ALREADY in bgr
-  
-	_img = cv2.imread(source_img_path, cv2.IMREAD_COLOR)
+	if not is_reverse:
+		# Image is ALREADY in bgr
 
-	# Merge channels of the image into the one
+		_img = cv2.imread(img_path, cv2.IMREAD_COLOR)
 
-	img = merge_channels(_img)
+		# Merge channels of the image into the one
 
-	img = img.astype(int)
+		img = merge_channels(_img)
 
-	# Build color map
+		img = img.astype(int)
 
-	cmap = WebPaletteMifColorMap()
-	# cmap.dump_to_mif("webpalette_cmap.mif")
+		# Build color map
 
-	# And convert
+		cmap = WebPaletteMifColorMap()
+		# cmap.dump_to_mif("webpalette_cmap.mif")
 
-	mif_convert.img_to_mif(img, mif_img_path, cmap)
+		# And convert
 
-	# From mif generate image by the way FPGA does it
+		mif_convert.img_to_mif(img, mif_img_path, cmap)
 
-	# cmap_file = FileMifColorMap("webpalette_cmap.mif")
-	# mif_convert.mif_to_img(SOURCE_MIF_PATH, IMG_OUT_PATH, cmap_file)
+	else:
+		# Dump webpalette colormap into temporary file.
+		# We will need it only to simulate the FPGA logic that decodes
+		# MIF image through colormap.
 
-	return 0
+		fd_webpalette_cmap = tempfile.NamedTemporaryFile(delete=False)
 
-def main_24():
-	# Image is ALREADY in bgr
-  
-	_img = cv2.imread(SOURCE_IMG_PATH, cv2.IMREAD_COLOR)
-	rows, cols, _ = _img.shape
+		cmap = WebPaletteMifColorMap()
+		cmap.dump_to_mif(fd_webpalette_cmap.name)
 
-	img = np.zeros(shape=(rows,cols))
-	for row in range(rows):
-		for col in range(cols):
-			b = _img[row, col][0]
-			g = _img[row, col][1]
-			r = _img[row, col][2]
-			# img[row, col] = bgr(b, g, r)
-			img[row, col] = bgr(b, g, r)
+		fd_webpalette_cmap.close()
 
-	print(_img)
+		# From MIF file generate image by the way FPGA does it through
+		# the webpalette colormap
 
-	print("=====CONVERTED=====")
-
-	print(img)
-
-	# Output data to the .mif file
-
-	with open(MIF_OUT_PATH, "w") as f:
-		f.write("WIDTH = 32;\n")
-		f.write("DEPTH = {};\n".format(rows * cols))
-		f.write("ADDRESS_RADIX = HEX;\n")
-		f.write("DATA_RADIX = HEX;\n")
-
-		f.write("CONTENT BEGIN\n")
-
-		i = 0
-		for pix in np.nditer(img):
-			f.write("{:x}:{:x};\n".format(i, int(pix)))
-			i += 1
-
-		f.write("CONTENT END\n")
+		cmap_file = FileMifColorMap(fd_webpalette_cmap.name)
+		mif_convert.mif_to_img(mif_img_path, img_path, cmap_file)
 
 	return 0
 
 if __name__ == "__main__":
 	import sys
 	sys.exit(main(sys.argv))
+
+# def main_24():
+# 	# Image is ALREADY in bgr
+  
+# 	_img = cv2.imread(SOURCE_IMG_PATH, cv2.IMREAD_COLOR)
+# 	rows, cols, _ = _img.shape
+
+# 	img = np.zeros(shape=(rows,cols))
+# 	for row in range(rows):
+# 		for col in range(cols):
+# 			b = _img[row, col][0]
+# 			g = _img[row, col][1]
+# 			r = _img[row, col][2]
+# 			# img[row, col] = bgr(b, g, r)
+# 			img[row, col] = bgr(b, g, r)
+
+# 	print(_img)
+
+# 	print("=====CONVERTED=====")
+
+# 	print(img)
+
+# 	# Output data to the .mif file
+
+# 	with open(MIF_OUT_PATH, "w") as f:
+# 		f.write("WIDTH = 32;\n")
+# 		f.write("DEPTH = {};\n".format(rows * cols))
+# 		f.write("ADDRESS_RADIX = HEX;\n")
+# 		f.write("DATA_RADIX = HEX;\n")
+
+# 		f.write("CONTENT BEGIN\n")
+
+# 		i = 0
+# 		for pix in np.nditer(img):
+# 			f.write("{:x}:{:x};\n".format(i, int(pix)))
+# 			i += 1
+
+# 		f.write("CONTENT END\n")
+
+# 	return 0
