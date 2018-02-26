@@ -1,5 +1,4 @@
 import cv2
-import numpy as np
 from matplotlib import pyplot as plt
 
 import re
@@ -7,6 +6,7 @@ import argparse
 
 from pix_utils import *
 from mif_cmap import FileMifColorMap, WebPaletteMifColorMap
+import mif_convert
 
 CMAP_PATH = "/home/olegartys/quartus_prj/4grade/lab8/SPDS_Lab_8_DE1_SoC_Default/VGA_DATA/index_logo.mif"
 
@@ -18,67 +18,6 @@ MIF_OUT_PATH = "/home/olegartys/quartus_prj/4grade/lab8/snowmass.mif"
 # Mif -> img constants
 SOURCE_MIF_PATH = "/home/olegartys/quartus_prj/4grade/lab8/snowmass.mif"
 IMG_OUT_PATH = "/home/olegartys/quartus_prj/4grade/lab8/snowmass_reversed.bmp"
-
-
-def img_to_mif(img, mif_out_path, cmap):
-	rows, cols = img.shape
-
-	# Vectorize and apply fast pixel transform function
-
-	pix_bgr_to_mif_bound = lambda bgr_pix : cmap.get_mif_pix(bgr_pix)
-
-	pix_bgr_to_mif_vect = np.vectorize(pix_bgr_to_mif_bound)
-	mif_img = pix_bgr_to_mif_vect(img)
-
-	# Output data to the .mif file
-
-	with open(mif_out_path, "w") as f:
-		f.write("WIDTH = 8;\n")
-		f.write("DEPTH = {};\n".format(rows * cols))
-		f.write("\n")
-		f.write("ADDRESS_RADIX = HEX;\n")
-		f.write("DATA_RADIX = HEX;\n")
-		f.write("\n")
-
-		f.write("CONTENT BEGIN\n")
-
-		i = 0
-		for pix in np.nditer(mif_img):
-			f.write("{:x}:{:x};\n".format(i, int(pix)))
-			i += 1
-
-		f.write("CONTENT END\n")
-
-	return 0
-
-def mif_to_img(mif_path, out_jpg_path, cmap):
-	with open(mif_path) as f:
-		lines = f.readlines()
-		mif_orig_img = []
-		bgr_orig_img = np.zeros([480, 640, 3])
-		i = 0
-		j = 0
-
-		for line in lines:
-			match_s = re.findall(r'(\S+):(\w+)', line)
-			if len(match_s) != 0:
-				mif_color = int(match_s[0][1], 16)
-				mif_orig_img.append(mif_color)
-
-		for mif_pix in mif_orig_img:
-			bgr_pix = cmap.get_bgr_pix(mif_pix)
-			bgr_orig_img[i, j] = bgr_to_tuple(bgr_pix)
-			# bgr_orig_img[i, j] = rgb_to_tuple(bgr_to_rgb(bgr_pix))
-
-			if j == 639:
-				i += 1
-				j = 0
-			else:
-				j += 1
-
-		cv2.imwrite(out_jpg_path, bgr_orig_img)
-
-	return 0
 
 def merge_channels(img):
 	rows, cols, _ = img.shape
@@ -105,7 +44,7 @@ def main(argv):
 	args = parse_args(argv)
 
 	source_img_path = args.input_image
-	mif_img_path = output_image
+	mif_img_path = args.output_image
 
 	# Image is ALREADY in bgr
   
@@ -124,12 +63,12 @@ def main(argv):
 
 	# And convert
 
-	img_to_mif(img, mif_img_path, cmap)
+	mif_convert.img_to_mif(img, mif_img_path, cmap)
 
 	# From mif generate image by the way FPGA does it
 
 	# cmap_file = FileMifColorMap("webpalette_cmap.mif")
-	# mif_to_img(SOURCE_MIF_PATH, IMG_OUT_PATH, cmap_file)
+	# mif_convert.mif_to_img(SOURCE_MIF_PATH, IMG_OUT_PATH, cmap_file)
 
 	return 0
 
