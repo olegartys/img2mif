@@ -3,6 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import re
+import argparse
 
 from pix_utils import *
 from mif_cmap import FileMifColorMap, WebPaletteMifColorMap
@@ -89,14 +90,26 @@ def merge_channels(img):
 			g = img[row, col][1]
 			r = img[row, col][2]
 			ret_img[row, col] = bgr(b, g, r)
-			# img[row, col] = rgb(r, g, b)
 
 	return ret_img
 
-def main():
+def parse_args(argv):
+	parser = argparse.ArgumentParser(description='Image to MIF converted. By default webpalette colormap is used.')
+
+	parser.add_argument('input_image', help='Path to the image to be converted')
+	parser.add_argument('output_image', help='Path to the output MIF image')
+
+	return parser.parse_args()
+
+def main(argv):
+	args = parse_args(argv)
+
+	source_img_path = args.input_image
+	mif_img_path = output_image
+
 	# Image is ALREADY in bgr
   
-	_img = cv2.imread(SOURCE_IMG_PATH, cv2.IMREAD_COLOR)
+	_img = cv2.imread(source_img_path, cv2.IMREAD_COLOR)
 
 	# Merge channels of the image into the one
 
@@ -104,23 +117,19 @@ def main():
 
 	img = img.astype(int)
 
-	print(_img)
-	print("=====CONVERTED=====")
-	print(img)
-
 	# Build color map
 
 	cmap = WebPaletteMifColorMap()
 	# cmap.dump_to_mif("webpalette_cmap.mif")
 
-	print("--debug: bgr={} mif={}".format(img[0,0], cmap.get_mif_pix(img[0,0])))
+	# And convert
 
-	img_to_mif(img, MIF_OUT_PATH, cmap)
+	img_to_mif(img, mif_img_path, cmap)
 
 	# From mif generate image by the way FPGA does it
 
-	cmap_file = FileMifColorMap("webpalette_cmap.mif")
-	mif_to_img(SOURCE_MIF_PATH, IMG_OUT_PATH, cmap_file)
+	# cmap_file = FileMifColorMap("webpalette_cmap.mif")
+	# mif_to_img(SOURCE_MIF_PATH, IMG_OUT_PATH, cmap_file)
 
 	return 0
 
@@ -166,16 +175,4 @@ def main_24():
 
 if __name__ == "__main__":
 	import sys
-	sys.exit(main())
-
-
-# def bgr_to_mif(cv_img, mif_cmap):
-#   mif_image = []
-#   rows, cols = cv_img.shape
-
-#   for i in range(rows):
-#     for j in range(cols):
-#       k = cv_img[i, j]
-#       mif_image.append(pix_bgr_to_mif(k, mif_cmap))
-
-#   return mif_image
+	sys.exit(main(sys.argv))
