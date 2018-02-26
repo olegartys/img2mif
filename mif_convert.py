@@ -5,7 +5,30 @@ import cv2
 
 from pix_utils import *
 
-def img_to_mif(img, mif_out_path, cmap):
+def merge_channels(img):
+	rows, cols, _ = img.shape
+
+	ret_img = np.zeros(shape=(rows,cols))
+	for row in range(rows):
+		for col in range(cols):
+			b = img[row, col][0]
+			g = img[row, col][1]
+			r = img[row, col][2]
+			ret_img[row, col] = bgr(b, g, r)
+
+	return ret_img
+
+def img_to_mif(img_path, mif_out_path, cmap):
+	# Image is ALREADY in bgr
+
+	_img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+
+	# Merge channels of the image into the one
+
+	img = merge_channels(_img)
+
+	img = img.astype(int)
+
 	rows, cols = img.shape
 
 	# Vectorize and apply fast pixel transform function
